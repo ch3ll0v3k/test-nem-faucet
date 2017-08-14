@@ -29,6 +29,7 @@
     "express-session": "^1.15.5",
     "lodash": "^4.17.4",
     "morgan": "~1.8.2",
+    "nem-library": "^0.6.0-RC1",
     "nem-sdk": "^1.4.0",
     "pug": "~2.0.0-rc.3",
     "serve-favicon": "~2.4.3",

@@ -9,10 +9,15 @@ const qs = require('querystring');
 const _ = require('lodash');
 _.mixin({ isBlank: val => { return _.isEmpty(val) && !_.isNumber(val) || _.isNaN(val); } });
 
+const nemlib = require('nem-library');
+nemlib.NEMLibrary.bootstrap(nemlib.NetworkTypes.TEST_NET);
+
 const endpoint = nem.model.objects.create('endpoint')(
   process.env.NIS_ADDR || nem.model.nodes.defaultTestnet,
   process.env.NIS_PORT || nem.model.nodes.defaultPort
 );
+
+const transactionHttp = new TransactionHttp();
 
 const GOOGLE_RECAPTCHA_ENDPOINT = 'https://www.google.com/recaptcha/api/siteverify'
 
@@ -34,6 +39,41 @@ router.post('/', async function(req, res, next) {
 
   var query = qs.stringify(params);
   var sanitizedAddress = address.replace(/-/g, '');
+
+  requestReCaptchaValidation(reCaptchaUrl).then(function(reCaptchaRes) {
+
+    let msg = null;
+    if(_.empty(message)) {
+      msg = nemlib.EmptyMessage;
+    } else if (message && encrypt) {
+      msg = nemlib.PlainMessage.create(message);
+    } else {
+      msg = nemlib.PlainMessage.create(message);
+    }
+
+
+    let transferTx = nemlib.TransferTransaction.create(
+      nemlib.TimeWindow.createWithDeadline(),
+      new nemlib.Address(sanitizedAddress),
+      new nemlib.XEM(2),
+      EmptyMessage
+    );
+
+
+
+
+
+    transactionHttp.announceTransaction(signedTx).subscribe(x => {
+      console.log(x);
+    });
+
+    return nem.com.requests.account.data(endpoint, sanitizedAddress);
+  }).catch(function(err) {
+    // TODO: display what happened.
+    req.flash('error', 'Transaction failed. Please try again.');
+    res.redirect('/?' + query);
+  });
+
 
   requestReCaptchaValidation(reCaptchaUrl).then(function(reCaptchRes) {
     return nem.com.requests.account.data(endpoint, sanitizedAddress);
